@@ -1,0 +1,38 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+function source(path: string) {
+  return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+}
+
+test("Panel deletion proposals retain the deleted section content", () => {
+  const execute = source("lib/panel/agent-execute.ts");
+
+  assert.match(
+    execute,
+    /before_text: isDelete\s*\? params\.beforeText/,
+  );
+  assert.match(execute, /after_text: isDelete\s*\? ""/);
+});
+
+test("stale cards expose one purple Dismiss action", () => {
+  const card = source("components/creed/inline-proposal-diff.tsx");
+  const file = source("components/creed/file-screen.tsx");
+  const activity = source("components/creed/activity-ui.tsx");
+
+  assert.match(activity, /if \(status === "stale"\) \{/);
+  assert.match(
+    activity,
+    /bg-\[#F3E8FF\] text-\[#6D28D9\] dark:bg-\[#3b0764\]\/40 dark:text-\[#c4b5fd\]/,
+  );
+  assert.match(card, /aria-label="Dismiss stale proposal"/);
+  assert.match(card, /className="-mr-1 inline-flex h-7/);
+  assert.match(card, /bg-\[#6D28D9\]/);
+  assert.match(card, />\s*Dismiss\s*<\/button>/);
+  assert.doesNotMatch(card, /"Stale"/);
+  assert.doesNotMatch(card, /This section changed after the proposal was made/);
+  assert.match(card, /canReview \|\| mine \? \(\s*<StaleProposalAction/);
+  assert.match(file, /stableInlineProposals/);
+  assert.match(file, /stablePendingProposals/);
+});
